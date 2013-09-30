@@ -72,7 +72,10 @@ keys.reverse.each do |key|
   puts
   puts "  Failed executions:"
   execution_ids = summary[key].collect do |execution, failure|
-    execution.workflow_id
+    # The gsub I just had to discover. I have no idea why they do this
+    # in the web interface.
+    url = "https://console.aws.amazon.com/swf/home?region=#{opts[:region]}#execution_summary:domain=#{opts[:domain]};workflowId=#{execution.workflow_id};runId=#{execution.run_id}".gsub(/=$/, "!=")
+    "#{execution.workflow_id} (#{url})"
   end
   puts "    #{execution_ids.join("\n    ")}"
   puts
