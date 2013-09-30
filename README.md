@@ -1,24 +1,51 @@
 # Flo
 
-TODO: Write a gem description
+Summarize failures that occurred in Amazon Simple Workflow (SWF) today.
+
+It figures out what executions failed today and then gives you a summary
+of the failures, sorted by frequency. So you can fix it.
+
+![Flo](http://bios.weddingbee.com/pics/187249/Flo2.jpg)
 
 ## Installation
 
-Add this line to your application's Gemfile:
+This is too grody for RubyGems. You're gonna need to:
 
-    gem 'flo'
-
-And then execute:
-
+    $ git clone https://github.com/pnc/flo.git
+    $ cd flo
     $ bundle
-
-Or install it yourself as:
-
-    $ gem install flo
+    $ rake install
 
 ## Usage
 
-TODO: Write usage instructions here
+    $ flo -d your-domain
+
+    UNTRAPPED ERROR: No Such Key (8 failures):
+      /app/vendor/bundle/ruby/1.9.1/gems/aws-sdk-1.9.5/lib/aws/core/client.rb:360:in `return_or_raise'
+      /app/vendor/bundle/ruby/1.9.1/gems/aws-sdk-1.9.5/lib/aws/core/client.rb:461:in `client_request'
+      (eval):3:in `get_object'
+      /app/vendor/bundle/ruby/1.9.1/gems/aws-sdk-1.9.5/lib/aws/s3/s3_object.rb:1282:in `get_object'
+      /app/vendor/bundle/ruby/1.9.1/gems/aws-sdk-1.9.5/lib/aws/s3/s3_object.rb:1064:in `read'
+         ...
+    
+      Failed executions:
+        post-proc-3c0d8480-0c21-0131-beef-5ece7e3c4135
+        post-proc-0d8796f0-0c20-0131-17f7-1eb53991e53c
+        post-proc-3c0d8480-0c21-0131-beef-5ece7e3c4135
+        post-proc-0d8796f0-0c20-0131-17f7-1eb53991e53c
+        post-proc-d0f2cea0-0c12-0131-6315-3e638fae4aee
+        post-proc-60d1c7a0-0c14-0131-bd73-5ece7e3c4135
+        post-proc-768b77b0-0c01-0131-614d-3e638fae4aee
+        post-proc-85ed34d0-0b87-0131-144c-3ad509f50bb3
+    
+    exception (1 failures):
+      net.liftweb.json.JsonParser$ParseException: unknown token I
+      Near:  ","location":{"x":In
+      	at net.liftweb.json.JsonParser$Parser.fail(JsonParser.scala:234)
+      	at net.liftweb.json.JsonParser$Parser.nextToken(JsonParser.scala:321)
+    
+      Failed executions:
+        post-proc-556bec6b-3705-4642-8faa-c7f7043c2e8e
 
 ## Contributing
 
