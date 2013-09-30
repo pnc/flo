@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+
+require 'aws-sdk'
+require 'trollop'
+require 'active_support/time'
+require 'peach'
+
+opts = Trollop::options do
+  banner <<-EOS
+    flo - Amazon Simple Workflow failure summary
+EOS
+
+  opt :region, "AWS region in which your domain resides", :default => "us-east-1"
+  opt :domain, "Simple Workflow domain to query", :type => :string
+  opt :show_all, "List every failure separately", :default => false
+
+  opt :aws_access_key, "Defaults to the value of the AWS_ACCESS_KEY environment variable",
+      :short => "O", :type => :string
+  opt :aws_secret_key, "Defaults to the value of the AWS_SECRET_KEY environment variable",
+      :short => "W", :type => :string
+end
+
+Trollop::die(:domain, "You must specify a SWF domain") unless opts[:domain]
+
+access_key = opts[:aws_access_key] || ENV["AWS_ACCESS_KEY"] || ENV["AWSAccessKeyId"]
+access_secret = opts[:aws_secret_key] || ENV["AWS_SECRET_KEY"] || ENV["AWSSecretKey"]
+
+if !access_key || !access_secret
+  Trollop::die("""You must specify --aws-access-key and --aws-secret-key or define these
+environment variables: AWS_ACCESS_KEY, AWS_SECRET_KEY""")
+end
+
+AWS.config(:access_key_id => access_key,
+           :secret_access_key => access_secret)
+
+executions = AWS.regions[opts[:region]].
+               simple_workflow.domains[opts[:domain]].
+               workflow_executions.with_status(:failed).
+               started_after(Time.now.midnight).enum
+
+failures = executions.pmap do |execution|
+  failure = execution.history_events.reverse_order.find do |event|
+    event.event_type =~ /Failed$/ && event.attributes.keys.include?(:details)
+  end
+
+  [execution, failure]
+end
+
+if opts[:show_all]
+  failures.each do |execution, failure|
+    puts "  Execution #{execution.workflow_id} started at #{execution.started_at}"
+    puts "    #{failure.attributes[:reason]}"
+    puts "      #{failure.attributes[:details].split("\n").join("\n      ")}"
+    puts
+  end
+end
+
+summary = failures.group_by do |execution, failure|
+  failure.attributes[:reason]
+end
+
+keys = summary.keys.sort_by do |key|
+  summary[key].size
+end
+
+puts "=== #{opts[:domain]} Failure Summary ==="
+
+keys.reverse.each do |key|
+  (execution, failure) = summary[key].first
+  puts "#{failure.attributes[:reason]} (#{summary[key].size} failures):"
+  puts "  #{failure.attributes[:details].split("\n").join("\n  ")}"
+  puts
+  puts "  Failed executions:"
+  execution_ids = summary[key].collect do |execution, failure|
+    execution.workflow_id
+  end
+  puts "    #{execution_ids.join("\n    ")}"
+  puts
+end
+
+
