@@ -18,6 +18,16 @@ This is too grody for RubyGems. You're gonna need to:
 
 ## Usage
 
+      flo - Amazon Simple Workflow failure summary
+            --region, -r <s>:   AWS region in which your domain resides (default: us-east-1)
+            --domain, -d <s>:   Simple Workflow domain to query
+              --show-all, -s:   List every failure separately
+    --aws-access-key, -O <s>:   Defaults to the value of the AWS_ACCESS_KEY environment variable
+    --aws-secret-key, -W <s>:   Defaults to the value of the AWS_SECRET_KEY environment variable
+                  --help, -h:   Show this message
+
+## Example
+
     $ flo -d your-domain
 
     UNTRAPPED ERROR: No Such Key (8 failures):
