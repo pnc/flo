@@ -8,30 +8,16 @@ require 'peach'
 opts = Trollop::options do
   banner <<-EOS
     flo - Amazon Simple Workflow failure summary
+
+Credentials will be obtained from AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY environment variables, EC2 role, or ~/.aws/credentials.
 EOS
 
   opt :region, "AWS region in which your domain resides", :default => "us-east-1"
   opt :domain, "Simple Workflow domain to query", :type => :string
   opt :show_all, "List every failure separately", :default => false
-
-  opt :aws_access_key, "Defaults to the value of the AWS_ACCESS_KEY environment variable",
-      :short => "O", :type => :string
-  opt :aws_secret_key, "Defaults to the value of the AWS_SECRET_KEY environment variable",
-      :short => "W", :type => :string
 end
 
 Trollop::die(:domain, "You must specify a SWF domain") unless opts[:domain]
-
-access_key = opts[:aws_access_key] || ENV["AWS_ACCESS_KEY"] || ENV["AWSAccessKeyId"]
-access_secret = opts[:aws_secret_key] || ENV["AWS_SECRET_KEY"] || ENV["AWSSecretKey"]
-
-if !access_key || !access_secret
-  Trollop::die("""You must specify --aws-access-key and --aws-secret-key or define these
-environment variables: AWS_ACCESS_KEY, AWS_SECRET_KEY""")
-end
-
-AWS.config(:access_key_id => access_key,
-           :secret_access_key => access_secret)
 
 executions = AWS.regions[opts[:region]].
                simple_workflow.domains[opts[:domain]].
@@ -45,6 +31,9 @@ failures = executions.pmap do |execution|
 
   [execution, failure]
 end
+
+failures.reject! {|execution, failure| !failure}
+
 
 if opts[:show_all]
   failures.each do |execution, failure|
